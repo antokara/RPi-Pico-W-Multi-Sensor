@@ -1,0 +1,12 @@
+secrets.h
+.pio
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+
+# generated during build/upload
+*.ino.cpp
+
+# KiCad
+KiCad/design/design-backups
+KiCad/design/#auto_saved_files#
+KiCad/design/fp-info-cache
