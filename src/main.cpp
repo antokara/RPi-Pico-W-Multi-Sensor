@@ -5,7 +5,6 @@
 
 void setup()
 {
-    analogReadResolution(ANALOG_READ_RESOLUTION);
     Device::setup();
     Switches::setup();
     LxSensor::setup();

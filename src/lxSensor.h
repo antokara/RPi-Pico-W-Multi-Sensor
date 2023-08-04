@@ -50,7 +50,7 @@
 /**
  * @brief the lx delta that needs to be, in order to qualify for sending the new value
  */
-#define LX_SENSOR_SEND_DELTA 1500
+#define LX_SENSOR_SEND_DELTA 10000
 
 class LxSensor
 {
