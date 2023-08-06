@@ -7,7 +7,7 @@
 
 #define DEVICE_ID "multiSensor"
 #define DEVICE_NAME "Multi Sensor"
-#define FIRMWARE_VERSION "1.0.1"
+#define FIRMWARE_VERSION "1.0.2"
 
 // uncomment to enable serial.print debug messages
 // #define SERIAL_DEBUG

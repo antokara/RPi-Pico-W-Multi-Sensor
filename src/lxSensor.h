@@ -52,7 +52,7 @@
  * @brief the lx (filtered) delta that needs to be,
  * in order to qualify for sending the new value.
  */
-#define LX_SENSOR_SEND_DELTA 2500
+#define LX_SENSOR_SEND_DELTA 3500
 
 /**
  * @brief the lx delta that needs to be, in order to qualify for calculating
