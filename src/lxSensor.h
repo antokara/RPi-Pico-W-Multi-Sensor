@@ -46,7 +46,7 @@
  * we sent the value to the controller, in order to qualify for sending the new value,
  * during normal operation mode.
  */
-#define LX_SENSOR_SEND_FREQUENCY 15000
+#define LX_SENSOR_SEND_FREQUENCY 30000
 
 /**
  * @brief the lx (filtered) delta that needs to be,
