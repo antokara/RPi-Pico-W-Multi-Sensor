@@ -17,7 +17,7 @@ unsigned int LxSensor::sendLxFrequency = LX_SENSOR_SEND_FREQUENCY;
 
 /**
  * @brief frequency in milliseconds,
- * to allow sending of the lx value to the controller,
+ * to allow sending of the (filtered) lx value to the controller,
  * even if the delta is greater.
  *
  * note: this may change on the mode (e.g. if debug is enabled)
@@ -29,13 +29,24 @@ float LxSensor::sendLxDelta = LX_SENSOR_SEND_DELTA;
 float LxSensor::lx = 0.0;
 
 // previous lx (so we only send changes)
-float LxSensor::prevLx = 0.0;
+// start with -9999 to force a big delta on first run
+float LxSensor::prevLx = -9999.0;
+
+// current filtered lx
+float LxSensor::fLx = 0.0;
+
+// previous filtered lx (so we only send changes)
+// start with -9999 to force a big delta on first run
+float LxSensor::prevFLx = -9999.0;
 
 // last time we sent it
 unsigned long LxSensor::lastLxSendTime = 0;
 
 // the Lx sensor
 HASensorNumber LxSensor::lxSensor(LX_SENSOR_ENTITY_ID, HASensorNumber::PrecisionP2);
+
+// instantiate
+AvgFilter LxSensor::avgFilter(LX_FILTER_WINDOW_SIZE);
 
 /**
  * @brief convers the raw photoresistor input to lx
@@ -64,7 +75,7 @@ void LxSensor::setup()
 }
 
 /**
- * @brief if we should send the pressure to the controller.
+ * @brief if we should send the value to the controller.
  * a separate throttler to keep the unsolicited updates
  *
  * @return true
@@ -79,11 +90,8 @@ void LxSensor::loop()
 {
     int rawLxSensorInputValue = analogRead(PHOTORESISTOR_PIN); // read the input pin
     LxSensor::lx = rawPhotoresistorInputToLx(rawLxSensorInputValue);
-    if (abs(LxSensor::lx - LxSensor::prevLx) >= LxSensor::sendLxDelta && LxSensor::shouldSendLx())
+    if (abs(LxSensor::lx - LxSensor::prevLx) >= LX_SENSOR_CALC_DELTA)
     {
-        LxSensor::prevLx = LxSensor::lx;
-        LxSensor::lastLxSendTime = millis();
-
 #ifdef SERIAL_DEBUG
         Serial.print("raw: ");
         Serial.println(rawLxSensorInputValue);
@@ -94,16 +102,35 @@ void LxSensor::loop()
         {
             Device::mqtt.publish(LX_SENSOR_DEBUG_MQTT_TOPIC, String("raw lx input: " + String(rawLxSensorInputValue) + ", lx: " + String(LxSensor::lx)).c_str());
         }
-
-        LxSensor::lxSensor.setValue(LxSensor::lx);
-    }
-    else if (Device::reconnected)
-    {
-        /**
-         * @brief only upon reconnection (the reconnect flag lasts only one loop)
-         * send the current value to the controller, in case for example, the lx changed
-         * while we were disconnected, so that the controller gets this value "update"...
-         */
-        LxSensor::lxSensor.setValue(LxSensor::lx, true);
+        LxSensor::prevLx = LxSensor::lx;
+        LxSensor::fLx = LxSensor::avgFilter.addValue(LxSensor::lx);
+#ifdef SERIAL_DEBUG
+        Serial.print("fLx: ");
+        Serial.println(LxSensor::fLx);
+        Serial.print("prevFLx: ");
+        Serial.println(LxSensor::prevFLx);
+        Serial.print("fLx delta: ");
+        Serial.println(abs(LxSensor::fLx - LxSensor::prevFLx));
+#endif
+        if (abs(LxSensor::fLx - LxSensor::prevFLx) >= LxSensor::sendLxDelta && LxSensor::shouldSendLx())
+        {
+#ifdef SERIAL_DEBUG
+            Serial.print("sending fLx: ");
+            Serial.println(LxSensor::fLx);
+#endif
+            LxSensor::prevFLx = LxSensor::fLx;
+            LxSensor::lastLxSendTime = millis();
+            LxSensor::lxSensor.setValue(LxSensor::fLx);
+        }
+        else if (Device::reconnected)
+        {
+            /**
+             * @brief only upon reconnection (the reconnect flag lasts only one loop)
+             * send the current value to the controller, in case for example, the lx changed
+             * while we were disconnected, so that the controller gets this value "update"...
+             */
+            LxSensor::lastLxSendTime = millis();
+            LxSensor::lxSensor.setValue(LxSensor::fLx, true);
+        }
     }
 }

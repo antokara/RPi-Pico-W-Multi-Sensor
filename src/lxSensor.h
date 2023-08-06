@@ -2,6 +2,7 @@
 #define LX_SENSOR
 
 #include <ArduinoHA.h>
+#include "avgFilter.h"
 
 /**
  * @brief the unique (across all HA) entity id
@@ -45,12 +46,25 @@
  * we sent the value to the controller, in order to qualify for sending the new value,
  * during normal operation mode.
  */
-#define LX_SENSOR_SEND_FREQUENCY 15000
+#define LX_SENSOR_SEND_FREQUENCY 10000
 
 /**
- * @brief the lx delta that needs to be, in order to qualify for sending the new value
+ * @brief the lx (filtered) delta that needs to be,
+ * in order to qualify for sending the new value.
  */
-#define LX_SENSOR_SEND_DELTA 10000
+#define LX_SENSOR_SEND_DELTA 2500
+
+/**
+ * @brief the lx delta that needs to be, in order to qualify for calculating
+ * the new value (e.g. using the avg filter)
+ */
+#define LX_SENSOR_CALC_DELTA 1000
+
+/**
+ * @brief the size of the filter's window
+ * (smaller means more agressive changes in value)
+ */
+#define LX_FILTER_WINDOW_SIZE 4
 
 class LxSensor
 {
@@ -58,10 +72,16 @@ public:
     static float rawInputToLuxMultiplier;
     static unsigned int sendLxFrequency;
     static float sendLxDelta;
-    static float lx;
-    static float prevLx;
     static unsigned long lastLxSendTime;
     static HASensorNumber lxSensor;
+    // lx values
+    static float lx;
+    static float prevLx;
+    // filtered lx values
+    static float fLx;
+    static float prevFLx;
+    // our average filter instance
+    static AvgFilter avgFilter;
 
     // methods
     static bool shouldSendLx();
