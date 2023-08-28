@@ -29,6 +29,7 @@
 
 // the (analog) pin that we connect the light sensor output
 // you may use A0-A2
+// 5K-10K photoresistor with a 10K pulldown resistor
 #define PHOTORESISTOR_PIN A0
 
 // the raw input value we get from the photoresistor at brightest
